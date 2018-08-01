@@ -6,18 +6,21 @@
  * Time: 11:49
  */
 
-namespace AngryCreative;
+namespace AngryCreative\WPLanguageUpdater;
 
 /**
  * Class ThemeTest
  *
- * @package AngryCreative
+ * @package AngryCreative\WPLanguageUpdater
  */
 class ThemeTest extends \PHPUnit_Framework_TestCase {
 
 	public function testTheme() {
-		$dir    = dirname( dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) ) . '/public/wp-content';
-		$theme = new Theme( 'twentytwelve', '2.2.0.0', [ 'sv_SE' ], $dir );
+        require_once T10ns::locate_composer_autoloader();
+        $dir = T10ns::locate_wp_content();
+
+		//$dir    = dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) . '/public/wp-content';
+		$theme = new T10ns( 'theme', 'twentytwelve', '2.2.0.0', [ 'sv_SE' ], $dir );
 
 		$this->assertInternalType( 'array', $theme->get_languages() );
 		$this->assertNotEmpty( $theme->get_languages() );
@@ -28,7 +31,7 @@ class ThemeTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals( $dir . '/languages/themes', $theme->get_dest_path( 'theme', $dir ) );
 
-		$result = $theme->fetch_t10ns();
+		$result = $theme->fetch_all_t10ns();
 		$this->assertInternalType( 'array', $result );
 		$this->assertNotEmpty( $result );
 

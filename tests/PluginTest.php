@@ -6,18 +6,23 @@
  * Time: 11:49
  */
 
-namespace AngryCreative;
+namespace AngryCreative\WPLanguageUpdater;
 
 /**
  * Class PluginTest
  *
- * @package AngryCreative
+ * @package AngryCreative\WPLanguageUpdater
  */
 class PluginTest extends \PHPUnit_Framework_TestCase {
 
 	public function testPlugin() {
-		$dir    = dirname( dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) ) . '/public/wp-content';
-		$plugin = new Plugin( 'redirection', '2.8.1', [ 'sv_SE' ], $dir );
+
+
+        require_once T10ns::locate_composer_autoloader();
+        $dir = T10ns::locate_wp_content();
+
+		//$dir    = dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) . '/public/wp-content';
+		$plugin = new T10ns( 'plugin', 'redirection', '2.8.1', [ 'sv_SE' ], $dir );
 
 		$this->assertInternalType( 'array', $plugin->get_languages() );
 		$this->assertNotEmpty( $plugin->get_languages() );
@@ -27,7 +32,7 @@ class PluginTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertEquals( $dir . '/languages/plugins', $plugin->get_dest_path( 'plugin', $dir ) );
 
-		$result = $plugin->fetch_t10ns();
+		$result = $plugin->fetch_all_t10ns();
 		$this->assertInternalType( 'array', $result );
 		$this->assertNotEmpty( $result );
 

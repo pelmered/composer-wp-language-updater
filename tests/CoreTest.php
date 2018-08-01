@@ -6,22 +6,32 @@
  * Time: 11:49
  */
 
-namespace AngryCreative;
+namespace AngryCreative\WPLanguageUpdater;
 
 /**
  * Class CoreTest
  *
- * @package AngryCreative
+ * @package AngryCreative\WPLanguageUpdater
  */
 class CoreTest extends \PHPUnit_Framework_TestCase {
 
 	public function testCore() {
-		$dir    = dirname( dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) ) . '/public/wp-content';
-		$core = new Core( '4.8.2', [ 'sv_SE' ], $dir );
+
+
+		//require_once dirname( dirname( __DIR__ ) ) . '/vendor/autotoload.php';
+
+        //$this->requireAutoloader();
+
+
+        require_once T10ns::locate_composer_autoloader();
+        $dir = T10ns::locate_wp_content();
+
+		$core = new T10ns( 'core', '', '4.8.2', [ 'sv_SE' ], $dir );
 
 		$this->assertEquals( $dir . '/languages', $core->get_dest_path( 'core', $dir ) );
 
-		$result = $core->fetch_t10ns();
+
+		$result = $core->fetch_all_t10ns();
 		$this->assertInternalType( 'array', $result );
 		$this->assertNotEmpty( $result );
 
