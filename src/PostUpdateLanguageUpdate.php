@@ -159,77 +159,7 @@ class PostUpdateLanguageUpdate {
 
 		}
 	}
-
-	/**
-	 * @param string $slug    Plugin slug.
-	 * @param string $version Plugin version.
-	 */
-	protected static function update_plugin_t10ns( $slug, $version ) {
-		try {
-			$plugin_t10ns = new Plugin( $slug, $version, self::$languages, self::$wp_content_path );
-			$results      = $plugin_t10ns->fetch_t10ns();
-
-			if ( empty( $results ) ) {
-				self::$event->getIO()->write( "No translations updated for plugin: {$slug}" );
-
-			} else {
-				foreach ( $results as $result ) {
-					self::$event->getIO()->write( "Updated translation {$result} for plugin: {$slug}" );
-				}
-			}
-		} catch ( \Exception $e ) {
-			self::$event->getIO()->writeError( $e->getMessage() );
-
-		}
-	}
-
-	/**
-	 * @param string $slug    Theme slug.
-	 * @param string $version Theme version.
-	 */
-	protected static function update_theme_t10ns( $slug, $version ) {
-		try {
-			$theme_t10ns = new Theme( $slug, $version, self::$languages, self::$wp_content_path );
-			$results     = $theme_t10ns->fetch_t10ns();
-
-			if ( empty( $results ) ) {
-				self::$event->getIO()->write( "No translations updated for theme: {$slug}" );
-
-			} else {
-				foreach ( $results as $result ) {
-					self::$event->getIO()->write( "Updated translation {$result} for theme: {$slug}" );
-				}
-			}
-		} catch ( \Exception $e ) {
-			self::$event->getIO()->writeError( $e->getMessage() );
-
-		}
-	}
-
-	/**
-	 * Update|Install core t10ns.
-	 *
-	 * @param string $version Core version.
-	 */
-	protected static function update_core_t10ns( $version ) {
-		try {
-			$core    = new Core( $version, self::$languages, self::$wp_content_path );
-			$results = $core->fetch_t10ns();
-
-			if ( empty( $results ) ) {
-				self::$event->getIO()->write( "No translations updated for core v.{$version}" );
-
-			} else {
-				foreach ( $results as $result ) {
-					self::$event->getIO()->write( "Updated translation {$result} for core v.{$version}" );
-				}
-			}
-		} catch ( \Exception $e ) {
-			self::$event->getIO()->writeError( $e->getMessage() );
-
-		}
-	}
-
+	
 	/**
 	 * Remove t10ns on uninstall.
 	 *
