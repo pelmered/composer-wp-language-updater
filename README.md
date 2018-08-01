@@ -2,7 +2,8 @@
 
 This package will automatically update translations for WordPress core, themes & plugins when you install or update them via composer.*
 
-Made with :heart: by [Angry Creative](https://angrycreative.se) in Sweden.
+This is a fork by the unmaintained [package](https://github.com/Angrycreative/composer-plugin-language-update) by Angry Creative.
+
 
 *\* This only works if the translations are available via the WordPress API.*
 

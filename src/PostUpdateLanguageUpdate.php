@@ -159,7 +159,7 @@ class PostUpdateLanguageUpdate {
 
 		}
 	}
-	
+
 	/**
 	 * Remove t10ns on uninstall.
 	 *
