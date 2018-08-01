@@ -220,8 +220,8 @@ class T10ns {
 	 * @throws \Exception
 	 * @return string path to the destination directory.
 	 */
-	public function get_dest_path( $type = 'plugin', $wp_content_path ) : string {
-		$dest_path = $wp_content_path . '/languages';
+	public function get_dest_path( $type = 'plugin' ) : string {
+		$dest_path = $this->wp_content_path . '/languages';
 
 		if ( ! file_exists( $dest_path ) ) {
 			$result = mkdir( $dest_path, 0775 );
@@ -329,6 +329,96 @@ class T10ns {
 		} catch ( \Exception $e ) {
 			throw new \Exception( $e->getMessage() );
 		}
+	}
+
+    /**
+     * @param null $startDir
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public static function locate_composer_autoloader($startDir = null)
+    {
+        if(!$startDir) {
+            $startDir = dirname( dirname( __DIR__ ) );
+        }
+        $location = 'vendor/autoload.php';
+
+        try{
+            $path = static::locate_path_to_folder($location, $startDir);
+        } catch( \Exception $ex ) {}
+
+        if( $path ) {
+            return $path;
+        }
+
+        throw new \Exception( 'Failed to locate composer autoloader in tree' );
+    }
+
+    /**
+     * @param null $folder_name
+     * @param null $startDir
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public static function locate_wp_content($folder_name = null, $startDir = null)
+    {
+        if(!$startDir) {
+            $startDir = dirname( dirname( __DIR__ ) );
+        }
+
+        $folder_names = [
+            'wp-content',
+            'app'
+        ];
+
+
+        if($folder_name) {
+            $folder_names = array_merge($folder_name, $folder_names);
+        }
+
+        foreach( $folder_names as $location ) {
+            try{
+                $path = static::locate_path_to_folder($location, $startDir);
+            } catch( \Exception $ex ) {
+                continue;
+            }
+
+            if( $path && file_exists($path .'/plugins') && file_exists($path .'/themes')) {
+                return $path;
+            }
+        }
+
+        throw new \Exception( 'Failed to locate WP content directory in tree' );
+    }
+
+    /**
+     * Looks for folder upwards in the directory tree
+     *
+     * @param string $folder
+     * @param string $startDir
+     * @param int $maxDepth
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public static function locate_path_to_folder( string $folder, $startDir = __DIR__, $maxDepth = 10 )
+    {
+        $path = $startDir;
+
+        for($i=0; $i<$maxDepth; $i++) {
+
+            $p = $path . '/' . $folder;
+
+            if(file_exists($p)) {
+
+                return $p;
+            }
+            $path = \dirname($path);
+        }
+
+        throw new \Exception( 'Failed to locate directory in tree: ' . $folder );
 	}
 
 }

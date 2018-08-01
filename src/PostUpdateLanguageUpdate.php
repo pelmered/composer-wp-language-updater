@@ -33,16 +33,6 @@ class PostUpdateLanguageUpdate {
 	 */
 	protected static $event;
 
-	/**
-	 * Require composer autoloader
-	 *
-	 * @param PackageEvent $event
-	 */
-	public static function require_autoloader( PackageEvent $event ) {
-		$vendorDir = $event->getComposer()->getConfig()->get('vendor-dir');
-		require_once $vendorDir . '/autoload.php';
-	}
-
 
 	/**
 	 * Update t10ns when a package is installed
@@ -53,7 +43,7 @@ class PostUpdateLanguageUpdate {
 		self::$event = $event;
 
 		try {
-			self::require_autoloader( $event );
+			self::require_autoloader();
 			self::set_config();
 			self::get_t10ns_for_package( self::$event->getOperation()->getPackage() );
 
@@ -61,6 +51,16 @@ class PostUpdateLanguageUpdate {
 			self::$event->getIO()->writeError( $e->getMessage() );
 		}
 	}
+
+    /**
+     * Require composer autoloader
+     *
+     * @param PackageEvent $event
+     */
+    protected static function require_autoloader( PackageEvent $event ) {
+        $vendorDir = self::$event->getComposer()->getConfig()->get('vendor-dir');
+        require_once $vendorDir . '/autoload.php';
+    }
 
 	/**
 	 * Update t10ns when a package is updated
@@ -92,14 +92,14 @@ class PostUpdateLanguageUpdate {
 			self::$languages = $extra['wordpress-languages'];
 		}
 
-		if ( ! empty( $extra['wordpress-path-to-content-dir'] ) ) {
-			self::$wp_content_path = dirname( dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) ) . '/' . $extra['wordpress-path-to-content-dir'];
-		}
+		$wp_content_dir_name = empty( $extra['wordpress-path-to-content-dir'] ) ? null : $extra['wordpress-path-to-content-dir'];
+        self::$wp_content_path = static::locate_wp_content( $wp_content_dir_name );
 
 		if ( empty( self::$languages ) || empty( self::$wp_content_path ) ) {
 			throw new \Exception( 'Oops :( Did you forget to add the wordpress-langagues or path to content dir to the extra section of your composer.json?' );
 		}
 	}
+
 
 	/**
 	 * Get t10ns for a package, where applicable.
