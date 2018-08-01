@@ -57,7 +57,7 @@ class PostUpdateLanguageUpdate {
      *
      * @param PackageEvent $event
      */
-    protected static function require_autoloader( PackageEvent $event ) {
+    protected static function require_autoloader() {
         $vendorDir = self::$event->getComposer()->getConfig()->get('vendor-dir');
         require_once $vendorDir . '/autoload.php';
     }
@@ -71,7 +71,7 @@ class PostUpdateLanguageUpdate {
 		self::$event = $event;
 
 		try {
-			self::require_autoloader( $event );
+			self::require_autoloader();
 			self::set_config();
 			self::get_t10ns_for_package( self::$event->getOperation()->getTargetPackage() );
 
