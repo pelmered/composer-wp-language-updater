@@ -92,8 +92,17 @@ class PostUpdateLanguageUpdate {
 			self::$languages = $extra['wordpress-languages'];
 		}
 
-		$wp_content_dir_name = empty( $extra['wordpress-content-dir-name'] ) ? null : $extra['wordpress-content-dir-name'];
-		
+		$wp_content_dir_name = empty( $extra['wordpress-content-dir-name'] ) ?
+            null :
+            $extra['wordpress-content-dir-name'];
+
+		// For backwards compatibility
+		if( !$wp_content_dir_name ) {
+            $wp_content_dir_name = empty( $extra['wordpress-path-to-content-dir'] ) ?
+                null :
+                $extra['wordpress-path-to-content-dir'];
+        }
+
         self::$wp_content_path = static::locate_wp_content( $wp_content_dir_name );
 
 		if ( empty( self::$languages ) || empty( self::$wp_content_path ) ) {
