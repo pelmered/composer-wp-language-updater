@@ -97,10 +97,14 @@ class PostUpdateLanguageUpdate {
             $extra['wordpress-content-dir-name'];
 
 		// For backwards compatibility
-		if( !$wp_content_dir_name ) {
-            $wp_content_dir_name = empty( $extra['wordpress-path-to-content-dir'] ) ?
-                null :
-                $extra['wordpress-path-to-content-dir'];
+		if( !$wp_content_dir_name && empty( $extra['wordpress-path-to-content-dir'] ) ) {
+            $wp_content_dir_name = $extra['wordpress-path-to-content-dir'];
+
+            trigger_error(
+                'Using the extra "wordpress-path-to-content-dir" option is deprecated.
+                You should rename it to "wordpress-content-dir-name".',
+                E_USER_DEPRECATED
+            );
         }
 
         self::$wp_content_path = static::locate_wp_content( $wp_content_dir_name );
