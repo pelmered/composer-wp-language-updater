@@ -31,7 +31,7 @@ Run `composer require Angrycreative/composer-plugin-language-update:"*"`.
 ```json
 "extra": {
   "wordpress-languages": [ "sv_SE", "en_GB", "da_DK" ],
-  "wordpress-path-to-content-dir": "public/wp-content"
+  "wordpress-content-dir-name": "public/wp-content"
  }
 ``` 
 
