@@ -3,14 +3,14 @@
  * @package AngryCreative
  */
 
-namespace AngryCreative;
+namespace AngryCreative\WPLanguageUpdater;
 
 use GuzzleHttp\Client;
 
 /**
  * Class T10ns
  *
- * @package AngryCreative
+ * @package AngryCreative\WPLanguageUpdater
  */
 class T10ns {
 

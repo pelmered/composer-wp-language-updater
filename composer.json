@@ -1,5 +1,5 @@
 {
-  "name": "Angrycreative/composer-plugin-language-update",
+  "name": "pelmered/composer-plugin-language-update",
   "description": "Update translations for WP core, themes and plugins where managed by composer.",
   "keywords": [
     "WordPress",
@@ -20,10 +20,15 @@
       "name": "Richard Sweeney",
       "email": "richard.sweeney@angrycreative.se",
       "homepage": "https://angrycreative.se"
+    },
+    {
+      "name": "Peter Elmered",
+      "email": "peter@elmered.com",
+      "homepage": "https://elmered.com"
     }
   ],
   "autoload": {
-    "psr-4": {"AngryCreative\\": "src/AngryCreative"}
+    "psr-4": {"AngryCreative\\WPLanguageUpdater\\": "src"}
   },
   "require": {
     "php": ">=7.0",

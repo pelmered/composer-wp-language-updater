@@ -4,7 +4,7 @@
  * @package AngryCreative
  */
 
-namespace AngryCreative;
+namespace AngryCreative\WPLanguageUpdater;
 
 use Composer\Installer\PackageEvent;
 use Composer\Package\PackageInterface;
@@ -14,7 +14,7 @@ use Composer\Package\PackageInterface;
  *
  * @todo Handle removal of Plugins and/or Themes
  *
- * @package AngryCreative
+ * @package AngryCreative\WPLanguageUpdater
  */
 class PostUpdateLanguageUpdate {
 
