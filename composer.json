@@ -3,6 +3,7 @@
   "description": "Update translations for WP core, themes and plugins where managed by composer.",
   "keywords": [
     "WordPress",
+    "Languages",
     "Composer",
     "Plugins",
     "Themes"
@@ -28,14 +29,16 @@
     }
   ],
   "autoload": {
-    "psr-4": {"AngryCreative\\WPLanguageUpdater\\": "src"}
+    "psr-4": {
+      "AngryCreative\\WPLanguageUpdater\\": "src"
+    }
   },
   "require": {
     "php": ">=7.0",
     "guzzlehttp/guzzle": "~6.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "*"
+    "phpunit/phpunit": "^5.7"
   },
   "scripts": {
     "test": [
