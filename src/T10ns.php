@@ -340,7 +340,7 @@ class T10ns {
     public static function locate_composer_autoloader($startDir = null)
     {
         if(!$startDir) {
-            $startDir = dirname( dirname( __DIR__ ) );
+            $startDir = dirname( __DIR__, 2 );
         }
         $location = 'vendor/autoload.php';
 
@@ -365,7 +365,7 @@ class T10ns {
     public static function locate_wp_content($folder_name = null, $startDir = null)
     {
         if(!$startDir) {
-            $startDir = dirname( dirname( __DIR__ ) );
+            $startDir = dirname( __DIR__ , 2 );
         }
 
         $folder_names = [
