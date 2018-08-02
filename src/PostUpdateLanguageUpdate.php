@@ -92,9 +92,9 @@ class PostUpdateLanguageUpdate {
 			self::$languages = $extra['wordpress-languages'];
 		}
 
-		$wp_content_dir_name = empty( $extra['wordpress-content-dir-name'] ) ?
+		$wp_content_dir_name = empty( $extra['wordpress-content-dir'] ) ?
             null :
-            $extra['wordpress-content-dir-name'];
+            $extra['wordpress-content-dir'];
 
 		// For backwards compatibility
 		if( !$wp_content_dir_name && empty( $extra['wordpress-path-to-content-dir'] ) ) {
@@ -102,7 +102,7 @@ class PostUpdateLanguageUpdate {
 
             trigger_error(
                 'Using the extra "wordpress-path-to-content-dir" option is deprecated.
-                You should rename it to "wordpress-content-dir-name".',
+                You should rename it to "wordpress-content-dir".',
                 E_USER_DEPRECATED
             );
         }
