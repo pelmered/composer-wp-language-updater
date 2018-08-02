@@ -11,12 +11,12 @@ This is a fork by the unmaintained [package](https://github.com/Angrycreative/co
 
 #### 1. Add this repository as a composer dependency
 
-First, add this .git repo to the `repositories` array in your sites main `composer.json` file.
+First, add this repo to the `repositories` property in your site's main `composer.json` file.
 
 ```json
 {
   "type": "git",
-  "url": "https://github.com/Angrycreative/composer-plugin-language-update.git"
+  "url": "https://github.com/pelmered/composer-plugin-language-update.git"
 }
 ```
 
