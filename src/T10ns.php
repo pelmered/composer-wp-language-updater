@@ -1,7 +1,4 @@
 <?php
-/**
- * @package AngryCreative
- */
 
 namespace AngryCreative\WPLanguageUpdater;
 
@@ -66,8 +63,9 @@ class T10ns {
 	/**
 	 * T10ns constructor.
 	 *
-	 * @param string       $slug            Theme slug.
-	 * @param float|string $version         Theme version.
+	 * @param string       $package_type    Package type. Plugin, Theme or Core.
+	 * @param string       $slug            Package slug.
+	 * @param float|string $version         Package version.
 	 * @param array        $languages       Array of languages.
 	 * @param string       $wp_content_path Path to wp-content.
 	 *
@@ -88,15 +86,17 @@ class T10ns {
 	}
 
 	/**
-	 * @return mixed
+	 * Get WordPress API URL.
+	 *
+	 * @return string   WordPress API URL.
 	 */
 	public function get_api_url() {
 
 		$type = $this->package_type;
-		if( $this->package_type === 'plugin' ) {
+		if ( 'plugin' === $this->package_type ) {
 			$type = 'plugins';
 		}
-		if( $this->package_type === 'theme' ) {
+		if ( 'theme' === $this->package_type ) {
 			$type = 'themes';
 		}
 
@@ -104,14 +104,18 @@ class T10ns {
 	}
 
 	/**
-	 * @return array
+	 * Get Languages.
+	 *
+	 * @return array    Array of languages.
 	 */
 	public function get_languages() : array {
 		return $this->languages;
 	}
 
 	/**
-	 * @return array
+	 * Get translations.
+	 *
+	 * @return array    Array of translations.
 	 */
 	public function get_t10ns() : array {
 		return $this->t10ns;
@@ -191,9 +195,11 @@ class T10ns {
 		}
 
 		$client   = new Client();
-		$response = $client->request( 'GET', $api_url, [
-			'query' => $query,
-		] );
+		$response = $client->request(
+			'GET', $api_url, [
+				'query' => $query,
+			]
+		);
 
 		if ( 200 !== $response->getStatusCode() ) {
 			throw new \Exception( 'Got status code ' . $response->getStatusCode() );
@@ -215,7 +221,6 @@ class T10ns {
 	 * This will also create the directory if if doesn't exist.
 	 *
 	 * @param string $type            The object type.
-	 * @param string $wp_content_path The path to the wp_content directory.
 	 *
 	 * @throws \Exception
 	 * @return string path to the destination directory.
@@ -232,11 +237,11 @@ class T10ns {
 
 		$path = '';
 		switch ( $type ) {
-			case 'plugin' :
+			case 'plugin':
 				$path = '/plugins';
 				break;
 
-			case 'theme' :
+			case 'theme':
 				$path = '/themes';
 				break;
 		}
@@ -264,9 +269,11 @@ class T10ns {
 	public function download_t10ns( $url ) : string {
 		$client   = new Client();
 		$tmp_name = sys_get_temp_dir() . '/' . basename( $url );
-		$request  = $client->request( 'GET', $url, [
-			'sink' => $tmp_name,
-		] );
+		$request  = $client->request(
+			'GET', $url, [
+				'sink' => $tmp_name,
+			]
+		);
 
 		if ( 200 !== $request->getStatusCode() ) {
 			throw new \Exception( 'T10ns not found' );
@@ -331,94 +338,94 @@ class T10ns {
 		}
 	}
 
-    /**
-     * @param null $startDir
-     *
-     * @return string
-     * @throws \Exception
-     */
-    public static function locate_composer_autoloader($startDir = null)
-    {
-        if(!$startDir) {
-            $startDir = dirname( __DIR__, 2 );
-        }
-        $location = 'vendor/autoload.php';
+	public function remove_t10ns() {
+	}
 
-        try{
-            $path = static::locate_path_to_folder($location, $startDir);
-        } catch( \Exception $ex ) {}
+	/**
+	 * @param null $start_dir   Directory to looking upwards start from
+	 *
+	 * @return string       Path to composer autoloader.
+	 * @throws \Exception
+	 */
+	public static function locate_composer_autoloader( $start_dir = null ) {
+		if ( ! $start_dir ) {
+			$start_dir = dirname( __DIR__, 2 );
+		}
+		$location = 'vendor/autoload.php';
 
-        if( $path ) {
-            return $path;
-        }
+		try {
+			$path = static::locate_path_to_folder( $location, $start_dir );
+		} catch ( \Exception $ex ) {
+		}
 
-        throw new \Exception( 'Failed to locate composer autoloader in tree' );
-    }
+		if ( $path ) {
+			return $path;
+		}
 
-    /**
-     * @param null $folder_name
-     * @param null $startDir
-     *
-     * @return string
-     * @throws \Exception
-     */
-    public static function locate_wp_content($folder_name = null, $startDir = null)
-    {
-        if(!$startDir) {
-            $startDir = dirname( __DIR__ , 2 );
-        }
+		throw new \Exception( 'Failed to locate composer autoloader in tree' );
+	}
 
-        $folder_names = [
-            'wp-content',
-            'app'
-        ];
+	/**
+	 * @param null $folder_name wp-content folder name.
+	 * @param null $start_dir   Directory to looking upwards start from.
+	 *
+	 * @return string       Path to wp-content directory.
+	 * @throws \Exception
+	 */
+	public static function locate_wp_content( $folder_name = null, $start_dir = null ) {
+		if ( ! $start_dir ) {
+			$start_dir = dirname( __DIR__, 2 );
+		}
 
+		$folder_names = [
+			'wp-content',
+			'app',
+		];
 
-        if($folder_name) {
-            $folder_names = array_merge($folder_name, $folder_names);
-        }
+		if ( $folder_name ) {
+			$folder_names = array_merge( $folder_name, $folder_names );
+		}
 
-        foreach( $folder_names as $location ) {
-            try{
-                $path = static::locate_path_to_folder($location, $startDir);
-            } catch( \Exception $ex ) {
-                continue;
-            }
+		foreach ( $folder_names as $location ) {
+			try {
+				$path = static::locate_path_to_folder( $location, $start_dir );
+			} catch ( \Exception $ex ) {
+				continue;
+			}
 
-            if( $path && file_exists($path .'/plugins') && file_exists($path .'/themes')) {
-                return $path;
-            }
-        }
+			if ( $path && file_exists( $path . '/plugins' ) && file_exists( $path . '/themes' ) ) {
+				return $path;
+			}
+		}
 
-        throw new \Exception( 'Failed to locate WP content directory in tree' );
-    }
+		throw new \Exception( 'Failed to locate WP content directory in tree' );
+	}
 
-    /**
-     * Looks for folder upwards in the directory tree
-     *
-     * @param string $folder
-     * @param string $startDir
-     * @param int $maxDepth
-     *
-     * @return string
-     * @throws \Exception
-     */
-    public static function locate_path_to_folder( string $folder, $startDir = __DIR__, $maxDepth = 10 )
-    {
-        $path = $startDir;
+	/**
+	 * Looks for folder upwards in the directory tree
+	 *
+	 * @param string $folder     Folder and/or filename name to look for.
+	 * @param string $start_dir  Directory to looking upwards start from.
+	 * @param int    $max_depth  Maximum number of directories to look upwards in.
+	 *
+	 * @return string       Path to file or folder
+	 * @throws \Exception
+	 */
+	public static function locate_path_to_folder( string $folder, $start_dir = __DIR__, $max_depth = 10 ) {
+		$path = $start_dir;
 
-        for($i=0; $i<$maxDepth; $i++) {
+		for ( $i = 0; $i < $max_depth; $i++ ) {
 
-            $p = $path . '/' . $folder;
+			$p = $path . '/' . $folder;
 
-            if(file_exists($p)) {
+			if ( file_exists( $p ) ) {
 
-                return $p;
-            }
-            $path = \dirname($path);
-        }
+				return $p;
+			}
+			$path = \dirname( $path );
+		}
 
-        throw new \Exception( 'Failed to locate directory in tree: ' . $folder );
+		throw new \Exception( 'Failed to locate directory in tree: ' . $folder );
 	}
 
 }

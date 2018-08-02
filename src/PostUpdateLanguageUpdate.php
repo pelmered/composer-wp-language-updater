@@ -1,8 +1,4 @@
 <?php
-/**
- *
- * @package AngryCreative
- */
 
 namespace AngryCreative\WPLanguageUpdater;
 
@@ -19,16 +15,22 @@ use Composer\Package\PackageInterface;
 class PostUpdateLanguageUpdate {
 
 	/**
+	 * Confugred languages for WP installation
+	 *
 	 * @var array
 	 */
 	protected static $languages = [];
 
 	/**
+	 * Path to wp-content directory
+	 *
 	 * @var string
 	 */
 	protected static $wp_content_path = '';
 
 	/**
+	 * Composer PackageEvent object
+	 *
 	 * @var PackageEvent
 	 */
 	protected static $event;
@@ -37,7 +39,7 @@ class PostUpdateLanguageUpdate {
 	/**
 	 * Update t10ns when a package is installed
 	 *
-	 * @param PackageEvent $event
+	 * @param PackageEvent $event Composer PackageEvent object.
 	 */
 	public static function install_t10ns( PackageEvent $event ) {
 		self::$event = $event;
@@ -52,20 +54,10 @@ class PostUpdateLanguageUpdate {
 		}
 	}
 
-    /**
-     * Require composer autoloader
-     *
-     * @param PackageEvent $event
-     */
-    protected static function require_autoloader() {
-        $vendorDir = self::$event->getComposer()->getConfig()->get('vendor-dir');
-        require_once $vendorDir . '/autoload.php';
-    }
-
 	/**
 	 * Update t10ns when a package is updated
 	 *
-	 * @param PackageEvent $event
+	 * @param PackageEvent $event Composer PackageEvent object.
 	 */
 	public static function update_t10ns( PackageEvent $event ) {
 		self::$event = $event;
@@ -81,6 +73,26 @@ class PostUpdateLanguageUpdate {
 	}
 
 	/**
+	 * Remove t10ns on uninstall.
+	 *
+	 * @param PackageEvent $event
+	 *
+	 * @todo maybe implement this?
+	 */
+	public static function remove_t10ns( PackageEvent $event ) {
+		self::$event = $event;
+		exit;
+	}
+
+	/**
+	 * Require composer autoloader
+	 */
+	protected static function require_autoloader() {
+		$vendor_dir = self::$event->getComposer()->getConfig()->get( 'vendor-dir' );
+		require_once $vendor_dir . '/autoload.php';
+	}
+
+	/**
 	 * Set the config
 	 *
 	 * @throws \Exception
@@ -93,21 +105,21 @@ class PostUpdateLanguageUpdate {
 		}
 
 		$wp_content_dir_name = empty( $extra['wordpress-content-dir'] ) ?
-            null :
-            $extra['wordpress-content-dir'];
+			null :
+			$extra['wordpress-content-dir'];
 
-		// For backwards compatibility
-		if( !$wp_content_dir_name && empty( $extra['wordpress-path-to-content-dir'] ) ) {
-            $wp_content_dir_name = $extra['wordpress-path-to-content-dir'];
+		// For backwards compatibility.
+		if ( ! $wp_content_dir_name && empty( $extra['wordpress-path-to-content-dir'] ) ) {
+			$wp_content_dir_name = $extra['wordpress-path-to-content-dir'];
 
-            trigger_error(
-                'Using the extra "wordpress-path-to-content-dir" option is deprecated.
+			trigger_error(
+				'Using the extra "wordpress-path-to-content-dir" option is deprecated.
                 You should rename it to "wordpress-content-dir".',
-                E_USER_DEPRECATED
-            );
-        }
+				E_USER_DEPRECATED
+			);
+		}
 
-        self::$wp_content_path = static::locate_wp_content( $wp_content_dir_name );
+		self::$wp_content_path = static::locate_wp_content( $wp_content_dir_name );
 
 		if ( empty( self::$languages ) || empty( self::$wp_content_path ) ) {
 			throw new \Exception( 'Oops :( Did you forget to add the wordpress-langagues or path to content dir to the extra section of your composer.json?' );
@@ -118,19 +130,18 @@ class PostUpdateLanguageUpdate {
 	/**
 	 * Get t10ns for a package, where applicable.
 	 *
-	 * @param PackageInterface $package
+	 * @param PackageInterface $package Composer PackageInterface object.
 	 */
 	protected static function get_t10ns_for_package( PackageInterface $package ) {
 		switch ( $package->getType() ) {
 			case 'wordpress-plugin':
-
 				$package_type = 'plugin';
-				$slug = str_replace( 'wpackagist-plugin/', '', $package->getName() );
+				$slug         = str_replace( 'wpackagist-plugin/', '', $package->getName() );
 				break;
 
 			case 'wordpress-theme':
 				$package_type = 'theme';
-				$slug = str_replace( 'wpackagist-theme/', '', $package->getName() );
+				$slug         = str_replace( 'wpackagist-theme/', '', $package->getName() );
 
 				break;
 
@@ -148,15 +159,14 @@ class PostUpdateLanguageUpdate {
 
 
 	/**
-	 * @param string $slug    Plugin slug.
-	 * @param string $version Plugin version.
+	 * Update translations for package
+	 *
+	 * @param string $package_type  Package type. Plugin, Theme or Core.
+	 * @param string $version       Package version.
+	 * @param string $slug          Package slug.
 	 */
 	protected static function update_package_t10ns( $package_type, $version, $slug = '' ) {
 		try {
-			//$plugin_t10ns = new Plugin( $slug, $version, self::$languages, self::$wp_content_path );
-			//$results      = $plugin_t10ns->fetch_t10ns();
-
-
 			$t10ns   = new T10ns( $package_type, $slug, $version, self::$languages, self::$wp_content_path );
 			$results = $t10ns->fetch_all_t10ns();
 
@@ -174,16 +184,5 @@ class PostUpdateLanguageUpdate {
 		}
 	}
 
-	/**
-	 * Remove t10ns on uninstall.
-	 *
-	 * @param PackageEvent $event
-	 *
-	 * @todo maybe implement this?
-	 */
-	public static function remove_t10ns( PackageEvent $event ) {
-		self::$event = $event;
-		exit;
-	}
 
 }
