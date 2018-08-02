@@ -44,10 +44,10 @@ Add the following lines to the `scripts` section of your `composer.json`.
 ```json
 "scripts": {
   "post-package-install": [
-    "AngryCreative\\PostUpdateLanguageUpdate::install_t10ns"
+    "AngryCreative\\WPLanguageUpdater\\PostUpdateLanguageUpdate::install_t10ns"
   ],
   "post-package-update": [
-    "AngryCreative\\PostUpdateLanguageUpdate::update_t10ns"
+    "AngryCreative\\WPLanguageUpdater\\PostUpdateLanguageUpdate::update_t10ns"
   ]
 }
 ```
