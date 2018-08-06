@@ -9,22 +9,11 @@ This is a fork by the unmaintained [package](https://github.com/Angrycreative/co
 
 ## Installation instructions
 
-#### 1. Add this repository as a composer dependency
-
-First, add this .git repo to the `repositories` array in your sites main `composer.json` file.
-
-```json
-{
-  "type": "git",
-  "url": "https://github.com/Angrycreative/composer-plugin-language-update.git"
-}
-```
-
-#### 2. Require the package.
+#### 1. Require the package.
 
 Run `composer require Angrycreative/composer-plugin-language-update:"*"`.
 
-#### 3. Define the languages used on your site and the path to your wp-content directory.
+#### 2. Define the languages used on your site and the path to your wp-content directory.
  
  This can be done by adding the following parameters to the extras object in your sites' main `composer.json` file.
 
@@ -37,7 +26,7 @@ Run `composer require Angrycreative/composer-plugin-language-update:"*"`.
 
 (We need to add a list of locales manually as this operation cannot rely on having a connection to the database available).
 
-#### 4. Add the required composer install hooks.
+#### 3. Add the required composer install hooks.
 
 Add the following lines to the `scripts` section of your `composer.json`.
 
