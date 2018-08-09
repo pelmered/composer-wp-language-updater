@@ -11,7 +11,7 @@ This is a fork by the unmaintained [package](https://github.com/Angrycreative/co
 
 #### 1. Require the package.
 
-Run `composer require Angrycreative/composer-plugin-language-update:"*"`.
+Run `composer require pelmered/composer-plugin-language-update`.
 
 #### 2. Define the languages used on your site and the path to your wp-content directory.
  
