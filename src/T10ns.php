@@ -383,7 +383,7 @@ class T10ns {
 		];
 
 		if ( $folder_name ) {
-			$folder_names = array_merge( $folder_name, $folder_names );
+			$folder_names = array_merge( [$folder_name], $folder_names );
 		}
 
 		foreach ( $folder_names as $location ) {

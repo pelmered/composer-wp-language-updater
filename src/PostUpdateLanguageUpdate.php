@@ -109,7 +109,7 @@ class PostUpdateLanguageUpdate {
 			$extra['wordpress-content-dir'];
 
 		// For backwards compatibility.
-		if ( ! $wp_content_dir_name && empty( $extra['wordpress-path-to-content-dir'] ) ) {
+		if ( ! $wp_content_dir_name && !empty( $extra['wordpress-path-to-content-dir'] ) ) {
 			$wp_content_dir_name = $extra['wordpress-path-to-content-dir'];
 
 			trigger_error(
@@ -119,7 +119,7 @@ class PostUpdateLanguageUpdate {
 			);
 		}
 
-		self::$wp_content_path = static::locate_wp_content( $wp_content_dir_name );
+		self::$wp_content_path = T10ns::locate_wp_content( $wp_content_dir_name );
 
 		if ( empty( self::$languages ) || empty( self::$wp_content_path ) ) {
 			throw new \Exception( 'Oops :( Did you forget to add the wordpress-langagues or path to content dir to the extra section of your composer.json?' );
