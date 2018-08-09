@@ -32,10 +32,9 @@ Add the following lines to the `scripts` section of your `composer.json`.
 
 ```json
 "scripts": {
-  "post-package-install": [
-    "AngryCreative\\WPLanguageUpdater\\PostUpdateLanguageUpdate::install_t10ns"
-  ],
-  "post-package-update": [
+  "post-install-cmd": "@wp-language-update",
+  "post-update-cmd": "@wp-language-update",
+  "wp-language-update": [
     "AngryCreative\\WPLanguageUpdater\\PostUpdateLanguageUpdate::update_t10ns"
   ]
 }
