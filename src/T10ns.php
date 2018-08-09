@@ -2,6 +2,7 @@
 
 namespace AngryCreative\WPLanguageUpdater;
 
+use Composer\Package\PackageInterface;
 use GuzzleHttp\Client;
 
 /**
@@ -18,40 +19,40 @@ class T10ns {
 	 */
 	protected $api_url = 'https://api.wordpress.org/translations/%s/1.0/';
 
-    /**
-     * The package object.
-     *
-     * @var string
-     */
-    protected $package = null;
+	/**
+	 * The package object.
+	 *
+	 * @var string
+	 */
+	protected $package = null;
 
-    /**
-     * The package type.
-     *
-     * @var bool
-     */
-    protected $is_wp_package = true;
+	/**
+	 * The package type.
+	 *
+	 * @var bool
+	 */
+	protected $is_wp_package = true;
 
-    /**
-     * The package type.
-     *
-     * @var string
-     */
-    protected $package_type = '';
+	/**
+	 * The package type.
+	 *
+	 * @var string
+	 */
+	protected $package_type = '';
 
-    /**
-     * Package name, eg 'twenty-seventeen'.
-     *
-     * @var string
-     */
-    protected $name;
+	/**
+	 * Package name, eg 'twenty-seventeen'.
+	 *
+	 * @var string
+	 */
+	protected $name;
 
-    /**
-     * Package slug, eg 'twenty-seventeen'.
-     *
-     * @var string
-     */
-    protected $slug;
+	/**
+	 * Package slug, eg 'twenty-seventeen'.
+	 *
+	 * @var string
+	 */
+	protected $slug;
 
 	/**
 	 * Theme version.
@@ -60,11 +61,11 @@ class T10ns {
 	 */
 	protected $version;
 
-    /**
-     * Config object
-     *
-     * @var \AngryCreative\WPLanguageUpdater\Config
-     */
+	/**
+	 * Config object
+	 *
+	 * @var \AngryCreative\WPLanguageUpdater\Config
+	 */
 	protected $config;
 
 	/**
@@ -77,82 +78,71 @@ class T10ns {
 	/**
 	 * T10ns constructor.
 	 *
-	 * @param string       $package_type    Package type. Plugin, Theme or Core.
-	 * @param string       $slug            Package slug.
-	 * @param float|string $version         Package version.
-	 * @param array        $languages       Array of languages.
-	 * @param string       $wp_content_path Path to wp-content.
+	 * @param PackageInterface $package    Composer package object.
+	 * @param Config           $config     Config object.
 	 *
 	 * @throws \Exception
 	 */
-	public function __construct( $package, Config $config ) {
+	public function __construct( PackageInterface $package, Config $config ) {
 
-	    $this->package = $package;
-	    $valid_wp_type = $this->extract_package_data($package);
-	    $this->config = $config;
+		$this->package = $package;
+		$valid_wp_type = $this->extract_package_data( $package );
+		$this->config  = $config;
+	}
 
-	    /*
-		$this->package_type    = $package_type;
-		$this->slug            = $slug;
-		$this->version         = $version;
-		$this->languages       = $languages;
-		$this->wp_content_path = $wp_content_path;
-		*/
+	/**
+	 * Extract data from Package object.
+	 *
+	 * @param $package
+	 *
+	 * @return bool
+	 */
+	public function extract_package_data( $package ) {
+		$this->version = $package->getVersion();
 
+		switch ( $package->getType() ) {
+			case 'wordpress-plugin':
+				$this->package_type = 'plugin';
+				$this->slug         = $this->extract_slug( $package->getName(), $this->package_type );
+				break;
+
+			case 'wordpress-theme':
+				$this->package_type = 'theme';
+				$this->slug         = $this->extract_slug( $package->getName(), $this->package_type );
+				break;
+
+			case 'package':
+				if ( 'johnpbloch/wordpress' === $package->getName() ) {
+					$this->package_type = 'core';
+					$this->slug         = 'wordpress-core';
+					break;
+				}
+				$this->is_wp_package = false;
+				return false;
+			default:
+				$this->is_wp_package = false;
+				return false;
+		}
+
+		return true;
+	}
+
+	protected function get_nice_name( $name, $package_type ) {
+		return implode( ' ', array_map( 'ucfirst', explode( '-', $this->extract_slug( $name, $package_type ) ) ) );
+	}
+
+	protected function extract_slug( $slug, $package_type ) {
+		// Strip wpackagist vendor name
+		// return substr($slug, strpos($slug, '/') + 1);
+		return str_replace( 'wpackagist-' . $package_type . '/', '', $slug );
 	}
 
 
+	public function is_wp_package() {
+		return $this->is_wp_package;
+	}
 
-    public function extract_package_data($package)
-    {
-        $this->version = $package->getVersion();
-
-        switch ( $package->getType() ) {
-            case 'wordpress-plugin':
-                $this->package_type = 'plugin';
-                $this->slug         = $this->extract_slug( $package->getName(), $this->package_type );
-                break;
-
-            case 'wordpress-theme':
-                $this->package_type = 'theme';
-                $this->slug         = $this->extract_slug( $package->getName(), $this->package_type );
-                break;
-
-            case 'package':
-                if ( 'johnpbloch/wordpress' === $package->getName() ) {
-                    $this->package_type = 'core';
-                    $this->slug         = 'wordpress-core';
-                    break;
-                }
-                $this->is_wp_package = false;
-                return false;
-            default:
-                $this->is_wp_package = false;
-                return false;
-        }
-
-        return true;
-    }
-
-    protected function get_nice_name( $name, $package_type )
-    {
-        return implode(' ', array_map( 'ucfirst', explode('-', $this->extract_slug( $name, $package_type ) ) ) );
-    }
-
-    protected function extract_slug( $slug, $package_type )
-    {
-        // Strip wpackagist vendor name
-        //return substr($slug, strpos($slug, '/') + 1);
-        return str_replace( 'wpackagist-'.$package_type.'/', '', $slug );
-    }
-
-
-    public function is_wp_package()
-    {
-        return $this->is_wp_package;
-    }
-
-    /**
+	/**
 	 * Get WordPress API URL.
 	 *
 	 * @return string   WordPress API URL.
@@ -170,32 +160,32 @@ class T10ns {
 		return \sprintf( $this->api_url, $type );
 	}
 
-    /**
-     * Get slug.
-     *
-     * @return array    Package slug.
-     */
-    public function get_slug() : string {
-        return $this->slug;
-    }
+	/**
+	 * Get slug.
+	 *
+	 * @return array    Package slug.
+	 */
+	public function get_slug() : string {
+		return $this->slug;
+	}
 
-    /**
-     * Get Languages.
-     *
-     * @return array    Array of languages.
-     */
-    public function get_languages() : array {
-        return $this->config->get_languages();
-    }
+	/**
+	 * Get Languages.
+	 *
+	 * @return array    Array of languages.
+	 */
+	public function get_languages() : array {
+		return $this->config->get_languages();
+	}
 
-    /**
-     * Get Languages.
-     *
-     * @return array    Array of languages.
-     */
-    public function get_wp_content_path() : string {
-        return $this->config->get_wp_content_path();
-    }
+	/**
+	 * Get Languages.
+	 *
+	 * @return array    Array of languages.
+	 */
+	public function get_wp_content_path() : string {
+		return $this->config->get_wp_content_path();
+	}
 
 	/**
 	 * Get translations.
@@ -214,14 +204,13 @@ class T10ns {
 	 */
 	public function fetch_all_t10ns() : array {
 
-        try {
-            $this->t10ns = $this->get_available_t10ns();
-        } catch ( \Exception $e ) {
-            throw new \Exception( $e->getMessage() );
-        }
+		try {
+			$this->t10ns = $this->get_available_t10ns();
+		} catch ( \Exception $e ) {
+			throw new \Exception( $e->getMessage() );
+		}
 
 		$results = [];
-
 
 		foreach ( $this->get_languages() as $language ) {
 			try {
@@ -248,7 +237,7 @@ class T10ns {
 	 */
 	protected function fetch_t10ns_for_language( $language ) : bool {
 		$has_updated = false;
-        $dest_path = $this->get_dest_path();
+		$dest_path   = $this->get_dest_path();
 		foreach ( $this->t10ns as $t10n ) {
 
 			if ( $t10n->language !== $language ) {
@@ -257,22 +246,21 @@ class T10ns {
 
 			try {
 
-			    //TDO: check all files in zip bundle (for example core contains several files)
-                $file_name = ($this->package_type !== 'core' ? $this->get_slug().'-' : '').$language.'.mo';
+				// TDO: check all files in zip bundle (for example core contains several files)
+				$file_name = ( $this->package_type !== 'core' ? $this->get_slug() . '-' : '' ) . $language . '.mo';
 
-                $file_path = $dest_path.'/'.$file_name;
+				$file_path = $dest_path . '/' . $file_name;
 
-                $file_hash = '';
-                if(file_exists($dest_path.'/'.$file_name)) {
-                    $file_hash = md5_file($file_path);
-                }
+				$file_hash = '';
+				if ( file_exists( $dest_path . '/' . $file_name ) ) {
+					$file_hash = md5_file( $file_path );
+				}
 
 				$this->download_and_move_t10ns( $t10n->package );
 
-				if( $file_hash !== md5_file($file_path)) {
-                    $has_updated = true;
-                }
-
+				if ( $file_hash !== md5_file( $file_path ) ) {
+					$has_updated = true;
+				}
 			} catch ( \Exception $e ) {
 				throw new \Exception( $e->getMessage() );
 			}
@@ -282,10 +270,9 @@ class T10ns {
 	}
 
 
-    protected function is_changed($file1, $file2)
-    {
-        return md5_file($file1) === md5_file($file2);
-    }
+	protected function is_changed( $file1, $file2 ) {
+		return md5_file( $file1 ) === md5_file( $file2 );
+	}
 
 	/**
 	 * Get a list of available t10ns from the API.
@@ -323,7 +310,7 @@ class T10ns {
 		$body = json_decode( $response->getBody() );
 
 		if ( empty( $body->translations ) ) {
-			throw new \Exception( sprintf('%s: No translations available.', $this->get_slug()));
+			throw new \Exception( sprintf( '%s: No translations available.', $this->get_slug() ) );
 		}
 
 		return $body->translations;
@@ -408,12 +395,11 @@ class T10ns {
 	public function unpack_and_move_archived_t10ns( $t10n_files, $dest_path ) {
 		$zip = new \ZipArchive();
 
-		//var_dump($t10n_files);
-
+		// var_dump($t10n_files);
 		if ( true === $zip->open( $t10n_files ) ) {
 			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 
-			    /*
+				/*
 			    var_dump($i);
 			    var_dump(basename($i));
 			    */
@@ -443,19 +429,18 @@ class T10ns {
 		try {
 			$dest_path = $this->get_dest_path();
 
-            $t10n_files = $this->download_t10ns( $package_url );
+			$t10n_files = $this->download_t10ns( $package_url );
 
-            $this->unpack_and_move_archived_t10ns( $t10n_files, $dest_path );
-
+			$this->unpack_and_move_archived_t10ns( $t10n_files, $dest_path );
 
 		} catch ( \Exception $e ) {
-			//throw new \Exception( $e->getMessage() );
+			// throw new \Exception( $e->getMessage() );
 		}
 	}
 
-    /**
-     * TODO
-     */
+	/**
+	 * TODO
+	 */
 	public function remove_t10ns() {
 	}
 
