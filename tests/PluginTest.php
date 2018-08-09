@@ -8,37 +8,55 @@
 
 namespace AngryCreative\WPLanguageUpdater;
 
+require_once 'Base.php';
+
 /**
  * Class PluginTest
  *
  * @package AngryCreative\WPLanguageUpdater
  */
-class PluginTest extends \PHPUnit_Framework_TestCase {
+class PluginTest extends Base {
 
 	public function testPlugin() {
 
+        $languages = [ 'en_GB' ,'sv_SE' ];
 
-        require_once T10ns::locate_composer_autoloader();
-        $dir = T10ns::locate_wp_content();
+        $plugins = [
+            'redirection' => '2.8.1',
+            'wordpress-seo' => '3.4',
+            'acf-content-analysis-for-yoast-seo' => '2.8.1',
+        ];
 
-		//$dir    = dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) . '/public/wp-content';
-		$plugin = new T10ns( 'plugin', 'redirection', '2.8.1', [ 'sv_SE' ], $dir );
+        require_once Config::locate_composer_autoloader();
 
-		$this->assertInternalType( 'array', $plugin->get_languages() );
-		$this->assertNotEmpty( $plugin->get_languages() );
+        $dir = $this->wp_content;
 
-		$this->assertInternalType( 'array', $plugin->get_t10ns() );
-		$this->assertNotEmpty( $plugin->get_t10ns() );
+        foreach($plugins as $slug => $version) {
+            $package = new \Composer\Package\CompletePackage($slug, $version, $version);
+            $package->setType('wordpress-plugin');
 
-		$this->assertEquals( $dir . '/languages/plugins', $plugin->get_dest_path( 'plugin', $dir ) );
+            $config = new Config();
+            $config->set_languages($languages);
+            $config->set_wp_content_path($dir);
 
-		$result = $plugin->fetch_all_t10ns();
-		$this->assertInternalType( 'array', $result );
-		$this->assertNotEmpty( $result );
+            $t10ns = new T10ns($package, $config);
 
-		$this->assertFileExists( $plugin->get_dest_path( 'plugin', $dir ) );
-		$this->assertFileExists( $plugin->get_dest_path( 'plugin', $dir ) . '/redirection-sv_SE.mo' );
-		$this->assertFileExists( $plugin->get_dest_path( 'plugin', $dir ) . '/redirection-sv_SE.po' );
+            $this->assertInternalType('array', $t10ns->get_languages());
+            $this->assertNotEmpty($t10ns->get_languages());
+
+            $this->assertEquals($dir . '/languages/plugins', $t10ns->get_dest_path());
+
+            $result = $t10ns->fetch_all_t10ns();
+            $this->assertInternalType('array', $result);
+            $this->assertNotEmpty($result);
+
+            $this->assertFileExists($t10ns->get_dest_path());
+
+            foreach ($languages as $language) {
+                $this->assertFileExists($t10ns->get_dest_path() . '/redirection-' . $language . '.mo');
+                $this->assertFileExists($t10ns->get_dest_path() . '/redirection-' . $language . '.po');
+
+            }
+        }
 	}
-
 }

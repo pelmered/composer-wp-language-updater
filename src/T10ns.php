@@ -18,19 +18,40 @@ class T10ns {
 	 */
 	protected $api_url = 'https://api.wordpress.org/translations/%s/1.0/';
 
-	/**
-	 * The package type.
-	 *
-	 * @var string
-	 */
-	protected $package_type = '';
+    /**
+     * The package object.
+     *
+     * @var string
+     */
+    protected $package = null;
 
-	/**
-	 * Theme slug, eg 'twenty-seventeen'.
-	 *
-	 * @var string
-	 */
-	protected $slug;
+    /**
+     * The package type.
+     *
+     * @var bool
+     */
+    protected $is_wp_package = true;
+
+    /**
+     * The package type.
+     *
+     * @var string
+     */
+    protected $package_type = '';
+
+    /**
+     * Package name, eg 'twenty-seventeen'.
+     *
+     * @var string
+     */
+    protected $name;
+
+    /**
+     * Package slug, eg 'twenty-seventeen'.
+     *
+     * @var string
+     */
+    protected $slug;
 
 	/**
 	 * Theme version.
@@ -39,19 +60,12 @@ class T10ns {
 	 */
 	protected $version;
 
-	/**
-	 * Array of languages availale on the current site.
-	 *
-	 * @var array
-	 */
-	protected $languages = [];
-
-	/**
-	 * Path to the wp-content directory.
-	 *
-	 * @var string
-	 */
-	protected $wp_content_path;
+    /**
+     * Config object
+     *
+     * @var \AngryCreative\WPLanguageUpdater\Config
+     */
+	protected $config;
 
 	/**
 	 * A list of available t10s.
@@ -71,21 +85,74 @@ class T10ns {
 	 *
 	 * @throws \Exception
 	 */
-	public function __construct( $package_type, $slug, $version = '', array $languages, $wp_content_path ) {
+	public function __construct( $package, Config $config ) {
+
+	    $this->package = $package;
+	    $valid_wp_type = $this->extract_package_data($package);
+	    $this->config = $config;
+
+	    /*
 		$this->package_type    = $package_type;
 		$this->slug            = $slug;
 		$this->version         = $version;
 		$this->languages       = $languages;
 		$this->wp_content_path = $wp_content_path;
+		*/
 
-		try {
-			$this->t10ns = $this->get_available_t10ns( $this->get_api_url(), $this->version, $this->slug );
-		} catch ( \Exception $e ) {
-			throw new \Exception( $e->getMessage() );
-		}
 	}
 
-	/**
+
+
+    public function extract_package_data($package)
+    {
+        $this->version = $package->getVersion();
+
+        switch ( $package->getType() ) {
+            case 'wordpress-plugin':
+                $this->package_type = 'plugin';
+                $this->slug         = $this->extract_slug( $package->getName(), $this->package_type );
+                break;
+
+            case 'wordpress-theme':
+                $this->package_type = 'theme';
+                $this->slug         = $this->extract_slug( $package->getName(), $this->package_type );
+                break;
+
+            case 'package':
+                if ( 'johnpbloch/wordpress' === $package->getName() ) {
+                    $this->package_type = 'core';
+                    $this->slug         = 'wordpress-core';
+                    break;
+                }
+                $this->is_wp_package = false;
+                return false;
+            default:
+                $this->is_wp_package = false;
+                return false;
+        }
+
+        return true;
+    }
+
+    protected function get_nice_name( $name, $package_type )
+    {
+        return implode(' ', array_map( 'ucfirst', explode('-', $this->extract_slug( $name, $package_type ) ) ) );
+    }
+
+    protected function extract_slug( $slug, $package_type )
+    {
+        // Strip wpackagist vendor name
+        //return substr($slug, strpos($slug, '/') + 1);
+        return str_replace( 'wpackagist-'.$package_type.'/', '', $slug );
+    }
+
+
+    public function is_wp_package()
+    {
+        return $this->is_wp_package;
+    }
+
+    /**
 	 * Get WordPress API URL.
 	 *
 	 * @return string   WordPress API URL.
@@ -103,14 +170,32 @@ class T10ns {
 		return \sprintf( $this->api_url, $type );
 	}
 
-	/**
-	 * Get Languages.
-	 *
-	 * @return array    Array of languages.
-	 */
-	public function get_languages() : array {
-		return $this->languages;
-	}
+    /**
+     * Get slug.
+     *
+     * @return array    Package slug.
+     */
+    public function get_slug() : string {
+        return $this->slug;
+    }
+
+    /**
+     * Get Languages.
+     *
+     * @return array    Array of languages.
+     */
+    public function get_languages() : array {
+        return $this->config->get_languages();
+    }
+
+    /**
+     * Get Languages.
+     *
+     * @return array    Array of languages.
+     */
+    public function get_wp_content_path() : string {
+        return $this->config->get_wp_content_path();
+    }
 
 	/**
 	 * Get translations.
@@ -128,9 +213,17 @@ class T10ns {
 	 * @return array
 	 */
 	public function fetch_all_t10ns() : array {
+
+        try {
+            $this->t10ns = $this->get_available_t10ns();
+        } catch ( \Exception $e ) {
+            throw new \Exception( $e->getMessage() );
+        }
+
 		$results = [];
 
-		foreach ( $this->languages as $language ) {
+
+		foreach ( $this->get_languages() as $language ) {
 			try {
 				$result = $this->fetch_t10ns_for_language( $language );
 				if ( $result ) {
@@ -155,23 +248,44 @@ class T10ns {
 	 */
 	protected function fetch_t10ns_for_language( $language ) : bool {
 		$has_updated = false;
+        $dest_path = $this->get_dest_path();
 		foreach ( $this->t10ns as $t10n ) {
+
 			if ( $t10n->language !== $language ) {
 				continue;
 			}
 
 			try {
-				$this->download_and_move_t10ns( $this->package_type, $t10n->package, $this->wp_content_path );
-				$has_updated = true;
+
+			    //TDO: check all files in zip bundle (for example core contains several files)
+                $file_name = ($this->package_type !== 'core' ? $this->get_slug().'-' : '').$language.'.mo';
+
+                $file_path = $dest_path.'/'.$file_name;
+
+                $file_hash = '';
+                if(file_exists($dest_path.'/'.$file_name)) {
+                    $file_hash = md5_file($file_path);
+                }
+
+				$this->download_and_move_t10ns( $t10n->package );
+
+				if( $file_hash !== md5_file($file_path)) {
+                    $has_updated = true;
+                }
 
 			} catch ( \Exception $e ) {
 				throw new \Exception( $e->getMessage() );
-
 			}
 		}
 
 		return $has_updated;
 	}
+
+
+    protected function is_changed($file1, $file2)
+    {
+        return md5_file($file1) === md5_file($file2);
+    }
 
 	/**
 	 * Get a list of available t10ns from the API.
@@ -183,20 +297,21 @@ class T10ns {
 	 * @throws \Exception
 	 * @return array
 	 */
-	protected function get_available_t10ns( $api_url, $version = null, $slug = null ) : array {
+	protected function get_available_t10ns() : array {
+
 		$query = [];
 
-		if ( ! empty( $version ) ) {
-			$query['version'] = $version;
+		if ( ! empty( $this->version ) ) {
+			$query['version'] = $this->version;
 		}
 
-		if ( ! empty( $slug ) ) {
-			$query['slug'] = $slug;
+		if ( ! empty( $this->slug ) && 'core' !== $this->package_type ) {
+			$query['slug'] = $this->slug;
 		}
 
 		$client   = new Client();
 		$response = $client->request(
-			'GET', $api_url, [
+			'GET', $this->get_api_url(), [
 				'query' => $query,
 			]
 		);
@@ -208,7 +323,7 @@ class T10ns {
 		$body = json_decode( $response->getBody() );
 
 		if ( empty( $body->translations ) ) {
-			throw new \Exception( 'No t10ns found' );
+			throw new \Exception( sprintf('%s: No translations available.', $this->get_slug()));
 		}
 
 		return $body->translations;
@@ -225,8 +340,8 @@ class T10ns {
 	 * @throws \Exception
 	 * @return string path to the destination directory.
 	 */
-	public function get_dest_path( $type = 'plugin' ) : string {
-		$dest_path = $this->wp_content_path . '/languages';
+	public function get_dest_path() : string {
+		$dest_path = $this->get_wp_content_path() . '/languages';
 
 		if ( ! file_exists( $dest_path ) ) {
 			$result = mkdir( $dest_path, 0775 );
@@ -236,7 +351,7 @@ class T10ns {
 		}
 
 		$path = '';
-		switch ( $type ) {
+		switch ( $this->package_type ) {
 			case 'plugin':
 				$path = '/plugins';
 				break;
@@ -290,11 +405,18 @@ class T10ns {
 	 *
 	 * @throws \Exception
 	 */
-	public function unpack_and_more_archived_t10ns( $t10n_files, $dest_path ) {
+	public function unpack_and_move_archived_t10ns( $t10n_files, $dest_path ) {
 		$zip = new \ZipArchive();
+
+		//var_dump($t10n_files);
 
 		if ( true === $zip->open( $t10n_files ) ) {
 			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+
+			    /*
+			    var_dump($i);
+			    var_dump(basename($i));
+			    */
 				$ok = $zip->extractTo( $dest_path, [ $zip->getNameIndex( $i ) ] );
 				if ( false === $ok ) {
 					throw new \Exception( 'There was an error moving the translation to the destination directory' );
@@ -317,115 +439,24 @@ class T10ns {
 	 *
 	 * @throws \Exception
 	 */
-	public function download_and_move_t10ns( $package_type = 'plugin', $package_url, $wp_content_path ) {
+	public function download_and_move_t10ns( $package_url ) {
 		try {
-			$dest_path = $this->get_dest_path( $package_type, $wp_content_path );
+			$dest_path = $this->get_dest_path();
 
-			try {
-				$t10n_files = $this->download_t10ns( $package_url );
+            $t10n_files = $this->download_t10ns( $package_url );
 
-				try {
-					$this->unpack_and_more_archived_t10ns( $t10n_files, $dest_path );
+            $this->unpack_and_move_archived_t10ns( $t10n_files, $dest_path );
 
-				} catch ( \Exception $e ) {
-					throw new \Exception( $e->getMessage() );
-				}
-			} catch ( \Exception $e ) {
-				throw new \Exception( $e->getMessage() );
-			}
+
 		} catch ( \Exception $e ) {
-			throw new \Exception( $e->getMessage() );
+			//throw new \Exception( $e->getMessage() );
 		}
 	}
 
+    /**
+     * TODO
+     */
 	public function remove_t10ns() {
-	}
-
-	/**
-	 * @param null $start_dir   Directory to looking upwards start from
-	 *
-	 * @return string       Path to composer autoloader.
-	 * @throws \Exception
-	 */
-	public static function locate_composer_autoloader( $start_dir = null ) {
-		if ( ! $start_dir ) {
-			$start_dir = dirname( __DIR__, 2 );
-		}
-		$location = 'vendor/autoload.php';
-
-		try {
-			$path = static::locate_path_to_folder( $location, $start_dir );
-		} catch ( \Exception $ex ) {
-		}
-
-		if ( $path ) {
-			return $path;
-		}
-
-		throw new \Exception( 'Failed to locate composer autoloader in tree' );
-	}
-
-	/**
-	 * @param null $folder_name wp-content folder name.
-	 * @param null $start_dir   Directory to looking upwards start from.
-	 *
-	 * @return string       Path to wp-content directory.
-	 * @throws \Exception
-	 */
-	public static function locate_wp_content( $folder_name = null, $start_dir = null ) {
-		if ( ! $start_dir ) {
-			$start_dir = dirname( __DIR__, 2 );
-		}
-
-		$folder_names = [
-			'wp-content',
-			'app',
-		];
-
-		if ( $folder_name ) {
-			$folder_names = array_merge( [$folder_name], $folder_names );
-		}
-
-		foreach ( $folder_names as $location ) {
-			try {
-				$path = static::locate_path_to_folder( $location, $start_dir );
-			} catch ( \Exception $ex ) {
-				continue;
-			}
-
-			if ( $path && file_exists( $path . '/plugins' ) && file_exists( $path . '/themes' ) ) {
-				return $path;
-			}
-		}
-
-		throw new \Exception( 'Failed to locate WP content directory in tree' );
-	}
-
-	/**
-	 * Looks for folder upwards in the directory tree
-	 *
-	 * @param string $folder     Folder and/or filename name to look for.
-	 * @param string $start_dir  Directory to looking upwards start from.
-	 * @param int    $max_depth  Maximum number of directories to look upwards in.
-	 *
-	 * @return string       Path to file or folder
-	 * @throws \Exception
-	 */
-	public static function locate_path_to_folder( string $folder, $start_dir = __DIR__, $max_depth = 10 ) {
-		$path = $start_dir;
-
-		for ( $i = 0; $i < $max_depth; $i++ ) {
-
-			$p = $path . '/' . $folder;
-
-			if ( file_exists( $p ) ) {
-
-				return $p;
-			}
-			$path = \dirname( $path );
-		}
-
-		throw new \Exception( 'Failed to locate directory in tree: ' . $folder );
 	}
 
 }

@@ -8,36 +8,48 @@
 
 namespace AngryCreative\WPLanguageUpdater;
 
+require_once 'Base.php';
+
 /**
  * Class ThemeTest
  *
  * @package AngryCreative\WPLanguageUpdater
  */
-class ThemeTest extends \PHPUnit_Framework_TestCase {
+class ThemeTest extends Base {
 
 	public function testTheme() {
-        require_once T10ns::locate_composer_autoloader();
-        $dir = T10ns::locate_wp_content();
 
-		//$dir    = dirname( dirname( dirname( dirname( __DIR__ ) ) ) ) . '/public/wp-content';
-		$theme = new T10ns( 'theme', 'twentytwelve', '2.2.0.0', [ 'sv_SE' ], $dir );
+        $languages = [ 'en_GB' ,'sv_SE' ];
+
+        require_once Config::locate_composer_autoloader();
+
+        $dir = $this->wp_content;
+
+        $package = new \Composer\Package\CompletePackage('twentytwelve', '2.2.0.0', '2.2.0.0');
+        $package->setType('wordpress-theme');
+
+        $config = new Config();
+        $config->set_languages($languages);
+        $config->set_wp_content_path($dir);
+
+        $theme = new T10ns( $package, $config );
 
 		$this->assertInternalType( 'array', $theme->get_languages() );
 		$this->assertNotEmpty( $theme->get_languages() );
-		$this->assertEquals( $theme->get_languages(), [ 'sv_SE' ] );
+		$this->assertEquals( $theme->get_languages(), $languages );
 
-		$this->assertInternalType( 'array', $theme->get_t10ns() );
-		$this->assertNotEmpty( $theme->get_t10ns() );
-
-		$this->assertEquals( $dir . '/languages/themes', $theme->get_dest_path( 'theme', $dir ) );
+		$this->assertEquals( $dir . '/languages/themes', $theme->get_dest_path() );
 
 		$result = $theme->fetch_all_t10ns();
 		$this->assertInternalType( 'array', $result );
 		$this->assertNotEmpty( $result );
 
-		$this->assertFileExists( $theme->get_dest_path( 'theme', $dir ) );
-		$this->assertFileExists( $theme->get_dest_path( 'theme', $dir ) . '/twentytwelve-sv_SE.mo' );
-		$this->assertFileExists( $theme->get_dest_path( 'theme', $dir ) . '/twentytwelve-sv_SE.po' );
+		$this->assertFileExists( $theme->get_dest_path() );
+
+        foreach($languages as $language) {
+            $this->assertFileExists( $theme->get_dest_path() . '/twentytwelve-'.$language.'.mo' );
+            $this->assertFileExists( $theme->get_dest_path() . '/twentytwelve-'.$language.'.po' );
+        }
 	}
 
 }

@@ -8,39 +8,43 @@
 
 namespace AngryCreative\WPLanguageUpdater;
 
+require_once 'Base.php';
+
 /**
  * Class CoreTest
  *
  * @package AngryCreative\WPLanguageUpdater
  */
-class CoreTest extends \PHPUnit_Framework_TestCase {
+class CoreTest extends Base {
 
 	public function testCore() {
+        $languages = [ 'en_GB' ,'sv_SE' ];
 
+        require_once Config::locate_composer_autoloader();
+        $dir = __DIR__.'/wp-content';
 
-		//require_once dirname( dirname( __DIR__ ) ) . '/vendor/autotoload.php';
+        $package = new \Composer\Package\CompletePackage('johnpbloch/wordpress', '4.8.2', '4.8.2');
+        $package->setType('package');
 
-        //$this->requireAutoloader();
+        $config = new Config();
+        $config->set_languages($languages);
+        $config->set_wp_content_path($dir);
 
+		$core = new T10ns( $package, $config );
 
-        require_once T10ns::locate_composer_autoloader();
-        $dir = T10ns::locate_wp_content();
-
-		$core = new T10ns( 'core', '', '4.8.2', [ 'sv_SE' ], $dir );
-
-		$this->assertEquals( $dir . '/languages', $core->get_dest_path( 'core', $dir ) );
-
+		$this->assertEquals( $dir . '/languages', $core->get_dest_path() );
 
 		$result = $core->fetch_all_t10ns();
 		$this->assertInternalType( 'array', $result );
 		$this->assertNotEmpty( $result );
 
-		$this->assertFileExists( $core->get_dest_path( 'core', $dir ) );
-		$this->assertFileExists( $core->get_dest_path( 'core', $dir ) . '/sv_SE.mo' );
-		$this->assertFileExists( $core->get_dest_path( 'core', $dir ) . '/sv_SE.po' );
-		$this->assertFileExists( $core->get_dest_path( 'core', $dir ) . '/admin-sv_SE.mo' );
-		$this->assertFileExists( $core->get_dest_path( 'core', $dir ) . '/admin-sv_SE.po' );
+		$this->assertFileExists( $core->get_dest_path() );
 
+		foreach($languages as $language) {
+            $this->assertFileExists( $core->get_dest_path() . '/'.$language.'.mo' );
+            $this->assertFileExists( $core->get_dest_path() . '/'.$language.'.po' );
+            $this->assertFileExists( $core->get_dest_path() . '/admin-'.$language.'.mo' );
+            $this->assertFileExists( $core->get_dest_path() . '/admin-'.$language.'.po' );
+        }
 	}
-
 }

@@ -2,8 +2,8 @@
 
 namespace AngryCreative\WPLanguageUpdater;
 
-use Composer\Installer\PackageEvent;
 use Composer\Package\PackageInterface;
+use Composer\Script\Event;
 
 /**
  * Class PostUpdateLanguageUpdate
@@ -14,72 +14,53 @@ use Composer\Package\PackageInterface;
  */
 class PostUpdateLanguageUpdate {
 
-	/**
-	 * Confugred languages for WP installation
-	 *
-	 * @var array
-	 */
-	protected static $languages = [];
+    /**
+     * Composer Event object
+     *
+     * @var \Composer\Script\Event
+     */
+    protected static $event;
 
 	/**
-	 * Path to wp-content directory
+	 * Update t10ns when a composer is run
 	 *
-	 * @var string
+	 * @param \Composer\Script\Event $event Composer Event object.
 	 */
-	protected static $wp_content_path = '';
+	public static function update_t10ns( Event $event ) {
+	    self::$event = $event;
 
-	/**
-	 * Composer PackageEvent object
-	 *
-	 * @var PackageEvent
-	 */
-	protected static $event;
+        $packages = self::$event->getComposer()
+                                ->getRepositoryManager()
+                                ->getLocalRepository()
+                                ->getPackages();
 
 
-	/**
-	 * Update t10ns when a package is installed
-	 *
-	 * @param PackageEvent $event Composer PackageEvent object.
-	 */
-	public static function install_t10ns( PackageEvent $event ) {
-		self::$event = $event;
+        self::$event->getIO()->write('Checking for translations...');
 
-		try {
+        try {
 			self::require_autoloader();
-			self::set_config();
-			self::get_t10ns_for_package( self::$event->getOperation()->getPackage() );
+			$config = self::set_config();
+
+            foreach($packages as $package) {
+                static::update_package_t10ns( $package, $config );
+            }
 
 		} catch ( \Exception $e ) {
 			self::$event->getIO()->writeError( $e->getMessage() );
 		}
-	}
 
-	/**
-	 * Update t10ns when a package is updated
-	 *
-	 * @param PackageEvent $event Composer PackageEvent object.
-	 */
-	public static function update_t10ns( PackageEvent $event ) {
-		self::$event = $event;
 
-		try {
-			self::require_autoloader();
-			self::set_config();
-			self::get_t10ns_for_package( self::$event->getOperation()->getTargetPackage() );
-
-		} catch ( \Exception $e ) {
-			self::$event->getIO()->writeError( $e->getMessage() );
-		}
+        die();
 	}
 
 	/**
 	 * Remove t10ns on uninstall.
 	 *
-	 * @param PackageEvent $event
+	 * @param \Composer\Script\Event $event
 	 *
 	 * @todo maybe implement this?
 	 */
-	public static function remove_t10ns( PackageEvent $event ) {
+	public static function remove_t10ns( Event $event ) {
 		self::$event = $event;
 		exit;
 	}
@@ -98,10 +79,13 @@ class PostUpdateLanguageUpdate {
 	 * @throws \Exception
 	 */
 	protected static function set_config() {
+
+        $config = new Config();
+
 		$extra = self::$event->getComposer()->getPackage()->getExtra();
 
 		if ( ! empty( $extra['wordpress-languages'] ) ) {
-			self::$languages = $extra['wordpress-languages'];
+			$config->set_languages( $extra['wordpress-languages'] );
 		}
 
 		$wp_content_dir_name = empty( $extra['wordpress-content-dir'] ) ?
@@ -119,44 +103,15 @@ class PostUpdateLanguageUpdate {
 			);
 		}
 
-		self::$wp_content_path = T10ns::locate_wp_content( $wp_content_dir_name );
+        $config->set_wp_content_path( Config::locate_wp_content( $wp_content_dir_name ) );
 
-		if ( empty( self::$languages ) || empty( self::$wp_content_path ) ) {
+
+		if ( !$config->is_valid() ) {
 			throw new \Exception( 'Oops :( Did you forget to add the wordpress-langagues or path to content dir to the extra section of your composer.json?' );
 		}
+
+		return $config;
 	}
-
-
-	/**
-	 * Get t10ns for a package, where applicable.
-	 *
-	 * @param PackageInterface $package Composer PackageInterface object.
-	 */
-	protected static function get_t10ns_for_package( PackageInterface $package ) {
-		switch ( $package->getType() ) {
-			case 'wordpress-plugin':
-				$package_type = 'plugin';
-				$slug         = str_replace( 'wpackagist-plugin/', '', $package->getName() );
-				break;
-
-			case 'wordpress-theme':
-				$package_type = 'theme';
-				$slug         = str_replace( 'wpackagist-theme/', '', $package->getName() );
-
-				break;
-
-			case 'package':
-				if ( 'johnpbloch/wordpress' === $package->getName() ) {
-					$package_type = 'core';
-				}
-				break;
-			default:
-				return;
-		}
-
-		self::update_package_t10ns( $package_type, $package->getVersion(), $slug );
-	}
-
 
 	/**
 	 * Update translations for package
@@ -165,23 +120,27 @@ class PostUpdateLanguageUpdate {
 	 * @param string $version       Package version.
 	 * @param string $slug          Package slug.
 	 */
-	protected static function update_package_t10ns( $package_type, $version, $slug = '' ) {
+	protected static function update_package_t10ns( PackageInterface $package, Config $config ) {
 		try {
-			$t10ns   = new T10ns( $package_type, $slug, $version, self::$languages, self::$wp_content_path );
-			$results = $t10ns->fetch_all_t10ns();
+			$t10ns   = new T10ns( $package, $config );
 
-			if ( empty( $results ) ) {
-				self::$event->getIO()->write( "No translations updated for plugin: {$slug}" );
+			if( $t10ns->is_wp_package() ) {
+                $results = $t10ns->fetch_all_t10ns();
 
-			} else {
-				foreach ( $results as $result ) {
-					self::$event->getIO()->write( "Updated translation {$result} for plugin: {$slug}" );
-				}
-			}
-		} catch ( \Exception $e ) {
-			self::$event->getIO()->writeError( $e->getMessage() );
+                if ( empty( $results ) ) {
+                    self::$event->getIO()->write(
+                        sprintf('%s: No new translation updates found.', $t10ns->get_slug())
+                    );
 
-		}
+                } else {
+                    self::$event->getIO()->write(
+                        sprintf('%s: Updated translations: %s', $t10ns->get_slug(), implode(', ', $results) )
+                    );
+                }
+            }
+        } catch ( \Exception $e ) {
+            self::$event->getIO()->writeError( $e->getMessage() );
+        }
 	}
 
 

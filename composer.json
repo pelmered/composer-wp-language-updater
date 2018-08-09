@@ -46,6 +46,11 @@
     ],
     "tests": [
       "@composer run test"
+    ],
+    "post-install-cmd": "@wp-language-update",
+    "post-update-cmd": "@wp-language-update",
+    "wp-language-update": [
+      "AngryCreative\\WPLanguageUpdater\\PostUpdateLanguageUpdate::update_t10ns"
     ]
   }
 }
