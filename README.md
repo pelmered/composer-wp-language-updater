@@ -36,7 +36,8 @@ Add the following lines to the `scripts` section of your `composer.json`.
   "post-update-cmd": "@wp-language-update",
   "wp-language-update": [
     "AngryCreative\\WPLanguageUpdater\\PostUpdateLanguageUpdate::update_t10ns"
-  ]
+  ],
+  "post-package-uninstall": "AngryCreative\\WPLanguageUpdater\\PostUpdateLanguageUpdate::delete_t10ns"
 }
 ```
 
