@@ -59,10 +59,6 @@ You **may** need to run the tests as root to avoid permissions errors when creat
 
 This only works if the t10ns are found on the WordPress API, eg. https://api.wordpress.org/translations/plugins/1.0/?slug=redirection&version=2.7.3
 
-#### I can haz clean up after you?
-
-At the moment the translations are _not_ removed on `composer uninstall`. Pull requests welcome!
-
 #### I can haz missing feature plz?
 
 Sure thing! This is GitHub so just make us a pull request and we'll work together on making that happen.
