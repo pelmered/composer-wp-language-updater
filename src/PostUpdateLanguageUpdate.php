@@ -4,6 +4,7 @@ namespace AngryCreative\WPLanguageUpdater;
 
 use Composer\Package\PackageInterface;
 use Composer\Script\Event;
+use Composer\Installer\PackageEvent;
 
 /**
  * Class PostUpdateLanguageUpdate
@@ -53,13 +54,59 @@ class PostUpdateLanguageUpdate {
 	/**
 	 * Remove t10ns on uninstall.
 	 *
-	 * @param \Composer\Script\Event $event
+	 * @param \Composer\Script\PackageEvent $event
 	 *
 	 * @todo maybe implement this?
 	 */
-	public static function remove_t10ns( Event $event ) {
+	public static function delete_t10ns( PackageEvent $event ) {
 		self::$event = $event;
+
+		$package = self::$event->getOperation()->getPackage();
+
+		self::$event->getIO()->write( 'Checking for orphaned translations...' );
+
+		try {
+			self::require_autoloader();
+			$config = self::get_config();
+
+			static::delete_package_t10ns( $package, $config );
+
+		} catch ( \Exception $e ) {
+			self::$event->getIO()->writeError( $e->getMessage() );
+		}
+
 		exit;
+	}
+
+
+	/**
+	 * Update translations for package
+	 *
+	 * @param string $package_type  Package type. Plugin, Theme or Core.
+	 * @param string $version       Package version.
+	 * @param string $slug          Package slug.
+	 */
+	protected static function delete_package_t10ns( PackageInterface $package, Config $config ) {
+		try {
+			$t10ns = new T10ns( $package, $config );
+
+			if ( $t10ns->is_wp_package() ) {
+
+				$results = $t10ns->delete_t10ns();
+
+				if ( empty( $results ) ) {
+					self::$event->getIO()->write(
+						sprintf( '%s: No translations found.', $t10ns->get_slug() )
+					);
+				} else {
+					self::$event->getIO()->write(
+						sprintf( '%s: Translations removed: %s', $t10ns->get_slug(), implode( ', ', $results ) )
+					);
+				}
+			}
+		} catch ( \Exception $e ) {
+			self::$event->getIO()->writeError( $e->getMessage() );
+		}
 	}
 
 	/**

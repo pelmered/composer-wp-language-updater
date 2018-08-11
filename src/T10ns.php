@@ -245,8 +245,11 @@ class T10ns {
 			}
 
 			try {
+				// TODO: check all files in zip bundle (for example core contains several files
 
-				// TDO: check all files in zip bundle (for example core contains several files)
+				// Use composer.lock instead for checking for changes!
+				// See issue: https://github.com/pelmered/composer-plugin-language-update/issues/6
+
 				$file_name = ( $this->package_type !== 'core' ? $this->get_slug() . '-' : '' ) . $language . '.mo';
 
 				$file_path = $dest_path . '/' . $file_name;
@@ -267,6 +270,21 @@ class T10ns {
 		}
 
 		return $has_updated;
+	}
+
+	public function get_file_paths($language)
+	{
+		$dest_path   = $this->get_dest_path();
+
+		// TDO: check all files in zip bundle (for example core contains several files)
+		$file_name = ( $this->package_type !== 'core' ? $this->get_slug() . '-' : '' ) . $language;
+
+		$file_path = $dest_path . '/' . $file_name;
+
+		return [
+			$file_path.'.po',
+			$file_path.'.mo',
+		];
 	}
 
 
@@ -441,7 +459,35 @@ class T10ns {
 	/**
 	 * TODO
 	 */
-	public function remove_t10ns() {
+	public function delete_t10ns() {
+
+		try {
+			$this->t10ns = $this->get_available_t10ns();
+		} catch ( \Exception $e ) {
+			throw new \Exception( $e->getMessage() );
+		}
+
+		$results = [];
+
+		foreach($this->t10ns as $t10n) {
+
+			$files = $this->get_file_paths($t10n->language);
+
+			try {
+				foreach($files as $file) {
+					if(file_exists($file)) {
+						unlink($file);
+						$results[$t10n->language] = $t10n->language;
+					}
+				}
+
+			} catch ( \Exception $e ) {
+				// throw new \Exception( $e->getMessage() );
+			}
+
+		}
+
+		return $results;
 	}
 
 }
