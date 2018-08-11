@@ -38,7 +38,7 @@ class PostUpdateLanguageUpdate {
 
 		try {
 			self::require_autoloader();
-			$config = self::set_config();
+			$config = self::get_config();
 
 			foreach ( $packages as $package ) {
 				static::update_package_t10ns( $package, $config );
@@ -75,7 +75,7 @@ class PostUpdateLanguageUpdate {
 	 *
 	 * @throws \Exception
 	 */
-	protected static function set_config() {
+	protected static function get_config() {
 
 		$config = new Config();
 
