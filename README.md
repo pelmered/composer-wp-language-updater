@@ -1,5 +1,9 @@
 # Composer Auto Language Updates
 
+## This package is abandoned. Use this package instead: [inpsyde/wp-translation-downloader](https://github.com/inpsyde/wp-translation-downloader).
+
+
+
 This package will automatically update translations for WordPress core, themes & plugins when you install or update them via composer.*
 
 This is a fork by the unmaintained [package](https://github.com/Angrycreative/composer-plugin-language-update) by Angry Creative.
